@@ -269,6 +269,7 @@
     });
 
     function addTransaction(data){
+        console.log(data['customerId']);
         $.ajax({
             type: "POST",
             url: '/api/customers/transaction',
@@ -279,7 +280,7 @@
             success:(response) => {
                 console.log("success")
                 alert(response);
-                window.location.replace('/admin/customer-list');
+                window.location.replace('/admin/customer-edit-' + data['customerId']);
             },
             error: function(response){
                 console.log('Failed');

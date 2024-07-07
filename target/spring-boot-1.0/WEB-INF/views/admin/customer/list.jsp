@@ -107,7 +107,7 @@
                             </div>
                         </div>
                     </div>
-                    <security:authorize access="hasRole('MANAGER')">
+
                         <div class="pull-right">
                             <a href="/admin/customer-edit">
                                 <button title="Thêm nhân viên" class="btn btn-primary">
@@ -117,14 +117,16 @@
                                     </svg>
                                 </button>
                             </a>
+                            <security:authorize access="hasRole('MANAGER')">
                             <button title="Xóa nhân viên" class="btn btn-danger" id="btnDeleteCustomers">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-fill-dash" viewBox="0 0 16 16">
                                     <path d="M12.5 16a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7M11 12h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1 0-1m0-7a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
                                     <path d="M2 13c0 1 1 1 1 1h5.256A4.5 4.5 0 0 1 8 12.5a4.5 4.5 0 0 1 1.544-3.393Q8.844 9.002 8 9c-5 0-6 3-6 4"/>
                                 </svg>
                             </button>
+                            </security:authorize>
                         </div>
-                    </security:authorize>
+
 
                     <!-- PAGE CONTENT ENDS -->
                 </div><!-- /.col -->
@@ -132,7 +134,7 @@
 
             <div class="row">
                 <div class="col-xs-12">
-                    <div class="table-responsive">
+                    <div class="table-responsive" id="customerIdList">
                         <display:table name="model.listResult" cellspacing="0" cellpadding="0"
                                        requestURI="${formUrl}" partialList="true" sort="external"
                                        size="${model.totalItems}" defaultsort="2" defaultorder="ascending"
@@ -277,9 +279,13 @@
     $('#btnDeleteCustomers').click(function(e){
         e.preventDefault();
         var data = {};
-        var customerIds = $('#customerList').find('tbody input[type=checkbox]:checked').map(function(){
+        var customerIds = $('#customerIdList fieldset input[type=checkbox]:checked').map(function(){
             return $(this).val();
         }).get();
+        // shift to remove first element: on,6,7,8,9 -> remove "on"
+        if (customerIds[0] === "on"){
+            customerIds.shift();
+        }
         data['customerIds'] = customerIds;
         deleteCustomer(data);
     })

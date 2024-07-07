@@ -192,7 +192,7 @@
             <hr class="hr hr-18 dotted hr-double" >
             <div class="row">
                 <div class="col-xs-12">
-                    <div class="table-responsive">
+                    <div class="table-responsive" id="buildingList">
                          <display:table name="model.listResult" cellspacing="0" cellpadding="0"
                        requestURI="${formUrl}" partialList="true" sort="external"
                        size="${model.totalItems}" defaultsort="2" defaultorder="ascending"
@@ -340,9 +340,13 @@
     $('#btnDeleteBuildings').click(function(e){
         e.preventDefault();
         var data = {};
-        var buildingIds = $('#buildingList').find('tbody input[type=checkbox]:checked').map(function(){
+        var buildingIds = $('#buildingList').find('fieldset input[type=checkbox]:checked').map(function(){
             return $(this).val();
         }).get();
+        // remove first element name "on" when click checkbox all
+        if (buildingIds[0] === "on"){
+            buildingIds.shift();
+        }
         data['buildingIds'] = buildingIds;
         deleteBuilding(data);
     })

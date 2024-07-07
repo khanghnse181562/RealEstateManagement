@@ -1,45 +1,45 @@
 package com.javaweb.controller.admin;
 
 import com.javaweb.constant.SystemConstant;
+import com.javaweb.entity.AssignmentCustomerEntity;
 import com.javaweb.entity.CustomerEntity;
 import com.javaweb.entity.TransactionEntity;
+import com.javaweb.entity.UserEntity;
 import com.javaweb.enums.Status;
 import com.javaweb.enums.TransactionType;
-import com.javaweb.enums.districtCode;
-import com.javaweb.enums.typeCode;
-import com.javaweb.model.dto.BuildingDTO;
 import com.javaweb.model.dto.CustomerDTO;
 import com.javaweb.model.request.CustomerSearchRequest;
-import com.javaweb.model.response.BuildingSearchResponse;
+import com.javaweb.repository.AssignmentCustomerRepository;
+import com.javaweb.repository.UserRepository;
 import com.javaweb.security.utils.SecurityUtils;
 import com.javaweb.service.ICustomerService;
 import com.javaweb.service.ITransactionService;
 import com.javaweb.service.IUserService;
 import com.javaweb.utils.DisplayTagUtils;
 import com.javaweb.utils.MessageUtils;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang.StringUtils;
-import org.hibernate.Transaction;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
 
 @RestController(value="customerControllerOfAdmin")
+@RequiredArgsConstructor
 public class CustomerController {
-    @Autowired
-    private IUserService userService;
-    @Autowired
-    private MessageUtils messageUtils;
-    @Autowired
-    private ICustomerService customerService;
-    @Autowired
-    private ITransactionService transactionService;
+    private final IUserService userService;
+    private final MessageUtils messageUtils;
+    private final ICustomerService customerService;
+    private final ITransactionService transactionService;
+    private final AssignmentCustomerRepository assignmentCustomerRepository;
+    private final UserRepository userRepository;
 
     @GetMapping(value="/admin/customer-list")
     public ModelAndView customerList(@ModelAttribute(SystemConstant.MODEL) CustomerSearchRequest model, HttpServletRequest request){
@@ -74,19 +74,32 @@ public class CustomerController {
     }
 
     @GetMapping(value="/admin/customer-edit-{id}")
-    public ModelAndView editCustomer(@PathVariable Long id){
+    public ModelAndView editCustomer(@PathVariable Long id, HttpServletRequest request, ServletResponse response){
         ModelAndView mav = new ModelAndView("admin/customer/edit");
         // Lay ra customer theo id, findByCustomerId
         CustomerEntity result = customerService.findById(id);
-        mav.addObject("customerEdit", result);
-        mav.addObject("status", Status.type());
-        mav.addObject("transactionType", TransactionType.transactionType());
-        mav.addObject(SystemConstant.BUTTON, "Chỉnh sửa");
-        List<TransactionEntity> listCSKH = transactionService.getTransactionTypeList(TransactionType.transactionKey().get(0), id);
-        List<TransactionEntity> listDDX = transactionService.getTransactionTypeList(TransactionType.transactionKey().get(1), id);
-        mav.addObject("listCSKH", listCSKH);
-        mav.addObject("listDDX", listDDX);
-        return mav;
+        UserEntity staff = userRepository.findById(SecurityUtils.getPrincipal().getId()).get();
+        // check whether the staff can access the edit or not
+        AssignmentCustomerEntity assigned = assignmentCustomerRepository.findByStaffAndCustomer(staff, result);
+        if (assigned == null){
+            RequestDispatcher dispatcher = request.getRequestDispatcher("/WEB-INF/views/admin/customer/not_found.jsp");
+            try {
+                dispatcher.forward(request, response);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return null;
+        } else {
+            mav.addObject("customerEdit", result);
+            mav.addObject("status", Status.type());
+            mav.addObject("transactionType", TransactionType.transactionType());
+            mav.addObject(SystemConstant.BUTTON, "Chỉnh sửa");
+            List<TransactionEntity> listCSKH = transactionService.getTransactionTypeList(TransactionType.transactionKey().get(0), id);
+            List<TransactionEntity> listDDX = transactionService.getTransactionTypeList(TransactionType.transactionKey().get(1), id);
+            mav.addObject("listCSKH", listCSKH);
+            mav.addObject("listDDX", listDDX);
+            return mav;
+        }
     }
 
     private void initMessageResponse(ModelAndView mav, HttpServletRequest request) {
